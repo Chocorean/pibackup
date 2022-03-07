@@ -53,6 +53,6 @@ $ sudo pibackup.sh
 
 Quoting Drewsif:
 
-*If you find a bug please create an issue for it. If you would like a new feature added, you can create an issue for it but I can't promise that I will get to it.
-
-Pull requests for new features and bug fixes are more than welcome!*
+> If you find a bug please create an issue for it. If you would like a new feature added, you can create an issue for it but I can't promise that I will get to it.
+>
+> Pull requests for new features and bug fixes are more than welcome!
