@@ -7,8 +7,25 @@ At the moment, the script is not very flexible and requires manual edit to be ad
 ## Usage
 
 ```bash
-$ pibackup.sh
-[...]
+$ ./pibackup.sh -h
+---
+pibackup.sh 0.1
+---
+
+usage: pibackup.sh -o <output> [options]
+
+Required parameters:
+  -o, --output-dir [DIRECTORY]  Where backup will be saved and rotated.
+
+Optional parameters:
+  -d, --destination [HOSTNAME]  Name of the destination host. Default:
+                                  self ($ uname -n)
+  -h, --help                    Display this message.
+  -n, --image-name [NAME]       Rename the backup file as '<NAME>.img.x'.
+                                  Default: self ($ uname -n)
+  -r, --rotation-count [COUNT]  Quantity of files to be kept. Default: 8
+  -t, --tmp-dir [DIRECTORY]     Temporary directory to use on the remote node. Default: /tmp
+  -q, --quiet                   Silent mode.
 ```
 
 ## Prerequisites
@@ -45,8 +62,16 @@ sudo mv pibackup.sh /usr/local/bin
 ## Example
 
 ```bash
-$ sudo pibackup.sh
-[...]
+$ pibackup.sh -o /mnt/hdd/backups -t /m
+nt/hdd/tmp
+[pibackup.sh] Dumping sdcard ...
+[pibackup.sh] Setting permissions ...
+[pibackup.sh] Shrinking image ...
+[pibackup.sh] Rotating previous images ...
+# if remote
+[pibackup.sh] Unmounting remote disk ...
+# endif
+[pibackup.sh] Done
 ```
 
 ## Contributing
