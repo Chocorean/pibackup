@@ -30,11 +30,17 @@ Optional parameters:
 
 ## Prerequisites
 
-This scripts uses [PiShrink](https://github.com/Drewsif/PiShrink) from Drewsif. Make sure to install it before.
+1. This project uses [PiShrink](https://github.com/Drewsif/PiShrink) from Drewsif. Make sure to install it before.
 
 ```bash
 $ which pishrink.sh
 /usr/local/bin/pishrink.sh
+```
+
+2. It also depends on `sshfs`:
+
+```bash
+# apt install sshfs
 ```
 
 ## Installation
