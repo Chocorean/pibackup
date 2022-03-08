@@ -68,8 +68,7 @@ sudo mv pibackup.sh /usr/local/bin
 ## Example
 
 ```bash
-$ pibackup.sh -o /mnt/hdd/backups -t /m
-nt/hdd/tmp
+$ pibackup.sh -o /mnt/hdd/backups -t /mnt/hdd/tmp
 [pibackup.sh] Dumping sdcard ...
 [pibackup.sh] Setting permissions ...
 [pibackup.sh] Shrinking image ...
