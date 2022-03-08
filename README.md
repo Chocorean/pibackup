@@ -40,7 +40,7 @@ $ which pishrink.sh
 2. It also depends on `sshfs`:
 
 ```bash
-# apt install sshfs
+$ sudo apt install sshfs
 ```
 
 ## Installation
