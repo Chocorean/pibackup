@@ -1,8 +1,17 @@
 # pibackup.sh
 
+<p align="center">
+  <img src="https://img.shields.io/badge/bash-5.0.3-lightgray" />
+</p>
+
 `pibackup.sh` is a bash script that automatically dump a PI sdcard as a shrunk image to a [remote] directory, and handles rotation of several files. It is recommend to run it using `cron` so the backups are done without any interaction.
 
 At the moment, the script is not very flexible and requires manual edit to be adapted to your needs.
+
+## Background
+
+Once during a house move, I unplugged a Raspberry PI and somehow it killed the SD card. All my code was saved already, but I lost hours of my time spent on configuring and pimping my PI. I was so mad at self for not doing backups that I started to look into automatic backup tools, but I didn't find anything that pleased me enough. So I bought an external drive and started this project.
+Hope it will be useful for more people than just myself!
 
 ## Usage
 
@@ -30,17 +39,19 @@ Optional parameters:
 
 ## Prerequisites
 
-1. This project uses [PiShrink](https://github.com/Drewsif/PiShrink) from Drewsif. Make sure to install it before.
+1. Disk space: At the moment, you cannot dump your sd card on itself; you need a proper storage. For instance, I have a disk drive plugged to my master Raspberry PI that other nodes will remotely interact with.
+
+2. This project uses [PiShrink](https://github.com/Drewsif/PiShrink) from Drewsif. Make sure to install it before.
 
 ```bash
 $ which pishrink.sh
 /usr/local/bin/pishrink.sh
 ```
 
-2. It also depends on `sshfs`:
+3. It also depends on `sshfs`:
 
 ```bash
-$ sudo apt install sshfs
+sudo apt install sshfs
 ```
 
 ## Installation
@@ -52,7 +63,7 @@ This section is subject to change as I am not happy with how it currently works.
 If you want to store the image on the same PI, you will need to install both `pibackup.sh` and `rotate.sh`
 
 ```bash
-$ for script in pibackup.sh rotate.sh; do wget https://raw.githubusercontent.com/Chocorean/pibackup/master/$script; chmod +x $script; sudo mv $script /usr/local/bin; done
+for script in pibackup.sh rotate.sh; do wget https://raw.githubusercontent.com/Chocorean/pibackup/master/$script; chmod +x $script; sudo mv $script /usr/local/bin; done
 ```
 
 ### Remote usage
