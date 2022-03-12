@@ -1,5 +1,6 @@
 # pibackup - CHANGELOG
 
+- 0.3 - Speed improvements
 - 0.2 - CLI update - 03/08/22
   - Minor changes
     - Update doc
