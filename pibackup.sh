@@ -168,7 +168,7 @@ else  # If remotely
   tmp_dir=$(mktemp -d)
   # also mount remote dd
   p 'Mounting remote disk'
-  sshfs "$destination:$remote_dest" "$tmp_dir"
+  sshfs -C "$destination:$remote_dest" "$tmp_dir"
   chown_cmd="ssh $destination sudo chown pi:pi"
   shrink_cmd="ssh $destination sudo pishrink.sh > /dev/null 2>&1"
   rotate_cmd="ssh $destination rotate.sh > /dev/null"
@@ -179,7 +179,7 @@ local_img=$remote_dest/$image_name
 
 # Splitting dd command in half so root doesn't write the image
 p 'Dumping sdcard'
-sudo dd if=/dev/mmcblk0 bs=4M | dd of="$img_dst" bs=4M > /dev/null
+sudo dd if=/dev/mmcblk0 bs=4M | gzip -1 - | dd of="$img_dst" bs=4M > /dev/null
 
 p 'Setting permissions'
 eval "$chown_cmd $local_img"
