@@ -44,6 +44,8 @@ Optional parameters:
   -r, --rotation-count [COUNT]  Quantity of files to be kept. Default: 8
   -t, --tmp-dir [DIRECTORY]     Temporary directory to use on the remote node. Default: /tmp
   -q, --quiet                   Silent mode.
+  -z, --gzip                    Compress image using gzip.
+  -Z, --xz                      Compress image using xz.
 END
 }
 
@@ -85,11 +87,14 @@ node_name=$(uname -n)
 ######################
 
 # Preparing optional parameters with default values
+compress=false
 destination=$node_name
 image_name=$node_name.img
+ps_opt=''
 rotation_count=8
 tmp_dir=/tmp  # /mnt/hdd/tmp
 quiet=false
+z_ext=''
 
 # This one is requried and has to be defined later
 #output_dir=/mnt/hdd/backups/$node_name
@@ -126,6 +131,16 @@ while [ -n "$1" ]; do
     -q | --quiet)
       quiet=true
       ;;
+    -z | --gzip)
+      compress=true
+      ps_opt='-z'
+      z_ext='gz'
+      ;;
+    -Z | --xz)
+      compress=true
+      ps_opt='-Z'
+      z_ext='xz'
+      ;;
     # Default
     *)
       err "$(usage)"
@@ -147,6 +162,8 @@ fi
 ########
 
 remote_dest=$tmp_dir
+img_dst=$tmp_dir/$image_name
+local_img=$remote_dest/$image_name
 
 # If backup is done locally
 if [[ "$node_name" == "$destination" ]]; then
@@ -157,8 +174,8 @@ if [[ "$node_name" == "$destination" ]]; then
   check umount
 
   chown_cmd='sudo chown pi:pi'
-  shrink_cmd='sudo pishrink.sh > /dev/null 2>&1'
-  rotate_cmd='rotate.sh > /dev/null'
+  shrink_cmd='sudo pishrink.sh -a'
+  rotate_cmd='rotate.sh'
 else  # If remotely
   check sshfs
   check_remote pishrink.sh
@@ -172,22 +189,35 @@ else  # If remotely
   p 'Mounting remote disk'
   sshfs -C "$destination:$remote_dest" "$tmp_dir"
   chown_cmd="ssh $destination sudo chown pi:pi"
-  shrink_cmd="ssh $destination sudo pishrink.sh > /dev/null 2>&1"
-  rotate_cmd="ssh $destination rotate.sh > /dev/null"
+  shrink_cmd="ssh $destination sudo pishrink.sh -a"
+  rotate_cmd="ssh $destination rotate.sh"
+fi
+dd_cmd="sudo dd if=/dev/mmcblk0 bs=4M conv=noerror,sync | dd of="$img_dst" bs=4M"
+
+if $compress; then
+  shrink_cmd="$shrink_cmd $ps_opt"
 fi
 
-img_dst=$tmp_dir/$image_name
-local_img=$remote_dest/$image_name
+if $quiet; then
+  dd_cmd="$dd_cmd > /dev/null"
+  shrink_cmd="$shrink_cmd > /dev/null"
+  rotate_cmd="$rotate_cmd > /dev/null"
+fi
 
 # Splitting dd command in half so root doesn't write the image
 p 'Dumping sdcard'
-sudo dd if=/dev/mmcblk0 bs=4M | gzip -1 - | dd of="$img_dst" bs=4M > /dev/null
+eval "$dd_cmd"
 
 p 'Setting permissions'
 eval "$chown_cmd $local_img"
 
 p 'Shrinking image'
 eval "$shrink_cmd $local_img"
+
+# PiShrink will rename image if -z/-Z
+if $compress; then
+  local_img="$local_img.$z_ext"
+fi
 
 p 'Rotating previous images'
 eval "$rotate_cmd $local_img $output_dir/$node_name $rotation_count"
@@ -197,6 +227,9 @@ if [[ "$node_name" != "$destination" ]]; then
   p 'Unmounting remote disk'
   sudo umount "$tmp_dir"
 fi
+
+# We've made it!
+p 'Done'
 
 #######
 # END #

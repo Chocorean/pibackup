@@ -8,6 +8,18 @@
 
 At the moment, the script is not very flexible and requires manual edit to be adapted to your needs.
 
+# Table of content
+
+1. [Background](#background)
+2. [Usage](#usage)
+3. [Prerequisites](#prerequisites)
+4. [Installation](#installation)
+  1. [Local usage](#local_usage)
+  2. [Remote usage](#remote_usage)
+5. [Example](#example)
+6. [Cron integration](#cron_integration)
+7. [Contributing](#contributing)
+
 ## Background
 
 Once during a house move, I unplugged a Raspberry PI and somehow it killed the SD card. All my code was saved already, but I lost hours of my time spent on configuring and pimping my PI. I was so mad at self for not doing backups that I started to look into automatic backup tools, but I didn't find anything that pleased me enough. So I bought an external drive and started this project.
@@ -18,7 +30,7 @@ Hope it will be useful for more people than just myself!
 ```bash
 $ ./pibackup.sh -h
 ---
-pibackup.sh 0.1
+pibackup.sh 0.4
 ---
 
 usage: pibackup.sh -o <output> [options]
@@ -35,6 +47,8 @@ Optional parameters:
   -r, --rotation-count [COUNT]  Quantity of files to be kept. Default: 8
   -t, --tmp-dir [DIRECTORY]     Temporary directory to use on the remote node. Default: /tmp
   -q, --quiet                   Silent mode.
+  -z, --gzip                    Compress image using gzip.
+  -Z, --xz                      Compress image using xz.
 ```
 
 ## Prerequisites
@@ -88,6 +102,25 @@ $ pibackup.sh -o /mnt/hdd/backups -t /mnt/hdd/tmp
 [pibackup.sh] Unmounting remote disk ...
 # endif
 [pibackup.sh] Done
+```
+
+## Cron integration
+
+The recommended way to use `pibackup.sh` is to define a job in the crontab and let your PI do the work for you. I recommend to seperate cron logs from syslog logs for easier troubleshooting. If not the case already, edit `/etc/rsyslog.conf` and uncomment `cron.*  /var/log/cron.log`.
+You may also need to install `postfix` because cron sends mails if a job has an output.
+
+**Also**, I had to set `SHELL` and `PATH` variables inside the crontab to make it work, but that might not be necessary for you. Here is how my crontab looks like:
+
+```bash
+# After running `crontab -e` as `pi` user
+---
+# default shell
+SHELL=/bin/bash
+# set PATH variable
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin
+
+# Do a backup once a week on Mondays at 2am
+0 2 * * MON /usr/local/bin/pibackup.sh ...
 ```
 
 ## Contributing

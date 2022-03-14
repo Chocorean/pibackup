@@ -1,5 +1,13 @@
 # pibackup - CHANGELOG
 
+- 0.4 - Compression bugfix
+  - Fix bug introduced in 0.3 (script was not working anymore)
+  - Add 'noerror,sync' conv dd flags
+  - Add -z and -Z (compression) options
+  - Improve quiet mode
+  - Do not suppress anymore stderr when quiet mode is on
+  - Tested behavior with cron
+  - Update doc
 - 0.3.1 - Minor bugfix (crash when unable to get script version)
 - 0.3 - Speed improvements
 - 0.2 - CLI update - 03/08/22
