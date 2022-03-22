@@ -92,7 +92,7 @@ destination=$node_name
 image_name=$node_name.img
 ps_opt=''
 rotation_count=8
-tmp_dir=/tmp  # /mnt/hdd/tmp
+remote_tmp_dir=/tmp  # /mnt/hdd/tmp
 quiet=false
 z_ext=''
 
@@ -126,7 +126,7 @@ while [ -n "$1" ]; do
       ;;
     -t | --tmp-dir)
       shift
-      tmp_dir=$1
+      remote_tmp_dir=$1
       ;;
     -q | --quiet)
       quiet=true
@@ -161,10 +161,6 @@ fi
 # Init #
 ########
 
-remote_dest=$tmp_dir
-img_dst=$tmp_dir/$image_name
-local_img=$remote_dest/$image_name
-
 # If backup is done locally
 if [[ "$node_name" == "$destination" ]]; then
   check pishrink.sh
@@ -184,15 +180,21 @@ else  # If remotely
   check_remote dd
   check_remote umount
 
-  tmp_dir=$(mktemp -d)
+  local_tmp_dir=$(mktemp -d)
   # also mount remote dd
   p 'Mounting remote disk'
-  sshfs -C "$destination:$remote_dest" "$tmp_dir"
+  sshfs -C "$destination:$remote_tmp_dir" "$local_tmp_dir"
   chown_cmd="ssh $destination sudo chown pi:pi"
   shrink_cmd="ssh $destination sudo pishrink.sh -a"
   rotate_cmd="ssh $destination rotate.sh"
 fi
-dd_cmd="sudo dd if=/dev/mmcblk0 bs=4M conv=noerror,sync | dd of="$img_dst" bs=4M"
+local_img=$local_tmp_dir/$image_name
+remote_img=$remote_tmp_dir/$image_name
+
+###############################
+# Actual backup starting here #
+###############################
+dd_cmd="sudo dd if=/dev/mmcblk0 bs=4M conv=noerror,sync | dd of="$local_img" bs=4M"
 
 if $compress; then
   shrink_cmd="$shrink_cmd $ps_opt"
@@ -209,23 +211,23 @@ p 'Dumping sdcard'
 eval "$dd_cmd"
 
 p 'Setting permissions'
-eval "$chown_cmd $local_img"
+eval "$chown_cmd $remote_img"
 
 p 'Shrinking image'
-eval "$shrink_cmd $local_img"
+eval "$shrink_cmd $remote_img"
 
 # PiShrink will rename image if -z/-Z
 if $compress; then
-  local_img="$local_img.$z_ext"
+  remote_img="$remote_img.$z_ext"
 fi
 
 p 'Rotating previous images'
-eval "$rotate_cmd $local_img $output_dir/$node_name $rotation_count"
+eval "$rotate_cmd $remote_img $output_dir/$node_name $rotation_count"
 
 # Unmounting remote dir from sshfs
 if [[ "$node_name" != "$destination" ]]; then
   p 'Unmounting remote disk'
-  sudo umount "$tmp_dir"
+  sudo umount "$local_tmp_dir"
 fi
 
 # We've made it!
