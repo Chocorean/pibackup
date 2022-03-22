@@ -1,5 +1,7 @@
 # pibackup - CHANGELOG
 
+- 0.4.1 - Fix remote logic
+  - Variables were not correctly set:used. Still subject to modification, but so far the correct logic is now implemented.
 - 0.4 - Compression bugfix
   - Fix bug introduced in 0.3 (script was not working anymore)
   - Add 'noerror,sync' conv dd flags
