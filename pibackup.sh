@@ -169,6 +169,8 @@ if [[ "$node_name" == "$destination" ]]; then
   check dd
   check umount
 
+  # Local tmp dir is the same as remote
+  local_tmp_dir=$remote_tmp_dir
   chown_cmd='sudo chown pi:pi'
   shrink_cmd='sudo pishrink.sh -a'
   rotate_cmd='rotate.sh'
