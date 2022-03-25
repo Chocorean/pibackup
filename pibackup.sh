@@ -5,7 +5,7 @@ set -eo pipefail
 script_name="$(basename "$0")"
 script_path="$(readlink -f "${BASH_SOURCE[0]}")"
 script_dir="$(cd "$(dirname "$script_path")" &> /dev/null && pwd)"
-script_version=$(cd $script_dir ; git describe --tags --abbrev=0 || echo '?? - .git missing')
+script_version=$(cd $script_dir ; git describe --tags --abbrev=0 || cat VERSION)
 
 #######################
 # print related stuff #
