@@ -4,9 +4,9 @@
 
 # pibackup.sh
 
-`pibackup.sh` is a bash script that automatically dump a PI sdcard as a shrunk image to a [remote] directory, and handles rotation of several files. It is recommend to run it using `cron` so the backups are done without any interaction.
+`pibackup.sh` is a bash script that automatically dump a PI sdcard as a shrunk image to a [remote] directory, and handles rotation of several files. It is recommended to automate this script using `systemd` timers or `cron`, so the backups are done on a regular basis and without any interaction.
 
-At the moment, the script is not very flexible and requires manual edit to be adapted to your needs.
+This is still WIP work, let me know if you have ideas about how to improve.
 
 ## Table of content
 
@@ -17,8 +17,10 @@ At the moment, the script is not very flexible and requires manual edit to be ad
    1. [Local usage](#local-usage)
    2. [Remote usage](#remote-usage)
 5. [Example](#example)
-6. [Cron integration](#cron-integration)
-7. [Contributing](#contributing)
+6. [Automation](#automation)
+   1. [systemd timer](#systemd-timer)
+   2. [cron job](#cron-job)
+8. [Contributing](#contributing)
 
 ## Background
 
@@ -128,24 +130,78 @@ $ pibackup.sh -o /backups
 [pibackup.sh] Done ...
 ```
 
-## Cron integration
+## Automation
 
-The recommended way to use `pibackup.sh` is to define a job in the crontab and let your PI do the work for you. I recommend to seperate cron logs from syslog logs for easier troubleshooting. If not the case already, edit `/etc/rsyslog.conf` and uncomment `cron.*  /var/log/cron.log`.
-As stated in the [Prerequisites](#prerequisites), you may also need to install `postfix` because cron sends mails if a job has an output.
+The recommended way to use `pibackup.sh` is to create a `systemd` timer-service duo, but a `cron` job will work fine.
 
-**Also**, I had to set `SHELL` and `PATH` variables inside the crontab to make it work, but that might not be necessary for you. Here is how my crontab looks like:
+### systemd timer
+
+You will first need to create the timer and the associated service. Then, enable and start the timer:
 
 ```bash
-# After running `crontab -e` as `pi` user
----
-# default shell
-SHELL=/bin/bash
-# set PATH variable
-PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin
-
-# Do a backup once a week on Mondays at 2am
-0 2 * * MON /usr/local/bin/pibackup.sh ...
+# systemctl enable pibackup.timer
+# systemctl start pibackup.timer
 ```
+
+Check [the docs](https://man.archlinux.org/man/systemd.time.7#CALENDAR_EVENTS) for `OnCalendar=` syntax.
+
+<details>
+  <summary>systemd timer</summary>
+  <p>
+    /etc/systemd/system/pibackup.timer
+    
+    [Unit]
+    Description=Run pibackup.sh every monday at 2am
+    
+    [Timer]
+    Unit=pibackup.service
+    OnCalendar=Mon, 2:00
+
+    [Install]
+    WantedBy=timers.target
+  </p>
+</details>
+    
+<details>
+  <summary>systemd service</summary>
+  <p>
+    /etc/systemd/system/pibackup.service
+    
+    [Unit]
+    Description=Run pibackup
+
+    [Service]
+    Type=oneshot
+    ExecStart=/usr/local/bin/pibackup.sh ...
+    User=pi
+  </p>
+</details>
+
+Thanks to [Mcdostone](https://github.com/Chocorean/pibackup/issues/8) for the suggestion.
+
+### cron job
+
+I recommend to seperate `cron` logs from `syslog` logs for easier troubleshooting. If not the case already, edit `/etc/rsyslog.conf` and uncomment `cron.*  /var/log/cron.log`.
+As stated in the [Prerequisites](#prerequisites) section, you may also need to install `postfix` because `cron` sends mails if a job has an output.
+
+**Also**, I had to set `SHELL` and `PATH` variables inside the crontab to make it work, but that might not be necessary for you.
+
+Check [the docs](https://www.man7.org/linux/man-pages/man5/crontab.5.html) for `crontab` syntax.
+
+<details>
+  <summary>crontab example</summary>
+  <p>
+    $ crontab -e
+
+    # default shell
+    SHELL=/bin/bash
+    # set PATH variable
+    PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin
+
+    # Do a backup once a week on Mondays at 2am
+    0 2 * * MON /usr/local/bin/pibackup.sh ...
+  </p>
+</details>
 
 ## Contributing
 
