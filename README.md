@@ -1,5 +1,6 @@
 <p align="center">
-  <img src="https://img.shields.io/badge/bash-5.0.3-lightgray" />
+  <img src="logo.img" alt="pibackup logo" />
+  <img src="https://img.shields.io/badge/bash-5.0.3-lightgray" alt="bash version" />
 </p>
 
 # pibackup.sh
