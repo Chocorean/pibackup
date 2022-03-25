@@ -2,7 +2,6 @@
   <img src="./logo.png" alt="pibackup logo" width="192px" />
   <br><br>
   <p>
-    zgeg
     <img src="https://img.shields.io/badge/bash-5.0.3-lightgray" alt="bash version" />
   </p>
 </div>
