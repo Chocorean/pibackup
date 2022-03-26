@@ -36,13 +36,12 @@ Required parameters:
   -o, --output-dir [DIRECTORY]  Where backup will be saved and rotated.
 
 Optional parameters:
-  -d, --destination [HOSTNAME]  Name of the destination host. Default:
-                                  self (\$ uname -n)
   -h, --help                    Display this message.
   -n, --image-name [NAME]       Rename the backup file as '<NAME>.img.x'.
                                   Default: self (\$ uname -n)
   -r, --rotation-count [COUNT]  Quantity of files to be kept. Default: 8
   -t, --tmp-dir [DIRECTORY]     Temporary directory to use on the remote node. Default: /tmp
+  -T, --target [HOSTNAME]       Name of the host to backup. Default: self
   -q, --quiet                   Silent mode.
   -z, --gzip                    Compress image using gzip.
   -Z, --xz                      Compress image using xz.
@@ -69,13 +68,6 @@ function check() {
   fi
 }
 
-function check_remote() {
-  if ! ssh $destination which "$1" > /dev/null 2>&1; then
-    err "check_remote: $destination: $* failed"
-    exit 1
-  fi 
-}
-
 #########
 # BEGIN #
 #########
@@ -88,11 +80,11 @@ node_name=$(uname -n)
 
 # Preparing optional parameters with default values
 compress=false
-destination=$node_name
-image_name=$node_name.img
+image_name=$target.img
 ps_opt=''
 rotation_count=8
-remote_tmp_dir=/tmp  # /mnt/hdd/tmp
+tmp_dir=/tmp  # /mnt/hdd/tmp
+target=$node_name
 quiet=false
 z_ext=''
 
@@ -108,10 +100,6 @@ while [ -n "$1" ]; do
       output_dir=$1
       ;;
     # Optional
-    -d | --destination)
-      shift
-      destination=$1
-      ;;
     -h | --help)
       usage
       exit 0
@@ -119,6 +107,7 @@ while [ -n "$1" ]; do
     -n | --image-name)
       shift
       image_name=$1
+      force_name=true
       ;;
     -r | --rotation-count)
       shift
@@ -126,7 +115,14 @@ while [ -n "$1" ]; do
       ;;
     -t | --tmp-dir)
       shift
-      remote_tmp_dir=$1
+      tmp_dir=$1
+      ;;
+    -T | --target)
+      shift
+      target=$1
+      if [ -z "$force_name" ]; then
+        image_name="$target.img"
+      fi
       ;;
     -q | --quiet)
       quiet=true
@@ -161,76 +157,62 @@ fi
 # Init #
 ########
 
-# If backup is done locally
-if [[ "$node_name" == "$destination" ]]; then
-  check pishrink.sh
-  check rotate.sh
-  check mktemp
-  check dd
-  check umount
+image_path=$tmp_dir/$image_name
 
-  # Local tmp dir is the same as remote
-  local_tmp_dir=$remote_tmp_dir
-  chown_cmd='sudo chown pi:pi'
-  shrink_cmd='sudo pishrink.sh -a'
-  rotate_cmd='rotate.sh'
-else  # If remotely
-  check sshfs
-  check_remote pishrink.sh
-  check_remote rotate.sh
-  check_remote mktemp
-  check_remote dd
-  check_remote umount
+# Making sure requirements are satisfied
+check pishrink.sh
+check rotate.sh
 
-  local_tmp_dir=$(mktemp -d)
-  # also mount remote dd
-  p 'Mounting remote disk'
-  sshfs -C "$destination:$remote_tmp_dir" "$local_tmp_dir"
-  chown_cmd="ssh $destination sudo chown pi:pi"
-  shrink_cmd="ssh $destination sudo pishrink.sh -a"
-  rotate_cmd="ssh $destination rotate.sh"
+# Defining commands
+chown_cmd='sudo chown pi:pi'
+shrink_cmd='sudo pishrink.sh -a'
+rotate_cmd="rotate.sh"
+
+# dd command is made of two parts
+if [[ "$node_name" == "$target" ]]; then  # local
+  dd_cmd='sudo dd if=/dev/mmcblk0 bs=4M conv=noerror,sync'
+else  # remote
+  dd_cmd="ssh $target sudo dd if=/dev/mmcblk0 bs=4M conv=noerror,sync"
 fi
-local_img=$local_tmp_dir/$image_name
-remote_img=$remote_tmp_dir/$image_name
+if $quiet; then
+  dd_cmd="$dd_cmd 2> /dev/null | dd of=$image_path bs=4M 2> /dev/null"
+else
+  dd_cmd="$dd_cmd | dd of=$image_path bs=4M"
+fi
 
-###############################
-# Actual backup starting here #
-###############################
-dd_cmd="sudo dd if=/dev/mmcblk0 bs=4M conv=noerror,sync | dd of="$local_img" bs=4M"
-
+# Compression options
 if $compress; then
   shrink_cmd="$shrink_cmd $ps_opt"
 fi
 
+# More quiet commands
 if $quiet; then
-  dd_cmd="$dd_cmd > /dev/null"
   shrink_cmd="$shrink_cmd > /dev/null"
   rotate_cmd="$rotate_cmd > /dev/null"
 fi
+
+###############################
+# Actual backup starting here #
+###############################
 
 # Splitting dd command in half so root doesn't write the image
 p 'Dumping sdcard'
 eval "$dd_cmd"
 
 p 'Setting permissions'
-eval "$chown_cmd $remote_img"
+eval "$chown_cmd $image_path"
 
 p 'Shrinking image'
-eval "$shrink_cmd $remote_img"
+eval "$shrink_cmd $image_path"
 
 # PiShrink will rename image if -z/-Z
 if $compress; then
-  remote_img="$remote_img.$z_ext"
+  image_path="$image_path.$z_ext"
 fi
 
 p 'Rotating previous images'
-eval "$rotate_cmd $remote_img $output_dir/$node_name $rotation_count"
-
-# Unmounting remote dir from sshfs
-if [[ "$node_name" != "$destination" ]]; then
-  p 'Unmounting remote disk'
-  sudo umount "$local_tmp_dir"
-fi
+mkdir -p $output_dir/$target
+eval "$rotate_cmd $image_path $output_dir/$target $rotation_count"
 
 # We've made it!
 p 'Done'

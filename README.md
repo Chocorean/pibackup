@@ -33,6 +33,8 @@ Hope it will be useful for more people than just myself!
 
 ## Usage
 
+**Note:** It will create a `<output>/<target>` directory, so you can use the same output directory for multiple nodes.
+
 ```bash
 $ ./pibackup.sh -h
 ---
