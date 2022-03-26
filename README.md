@@ -20,7 +20,8 @@ This is still WIP work, let me know if you have ideas about how to improve.
    1. [Optional dependencies](#optional-dependencies)
 4. [Installation](#installation)
 5. [Example](#example)
-6. [Automation](#automation)
+6. [Restoring](#restoring)
+7. [Automation](#automation)
    1. [systemd timer](#systemd-timer)
    2. [cron job](#cron-job)
 8. [Contributing](#contributing)
@@ -115,6 +116,30 @@ $ pibackup.sh -o /backups -d another_pi
 [pibackup.sh] Rotating previous images ...
 [pibackup.sh] Done ...
 ```
+
+## Restoring
+
+Doing backups is a good thing, however you know to know how to restore them. Right now, I haven't looked at the newest feature which allows to boot from the network, but I might add a section about it later.
+
+Use a computer with access to the storage drive. If you compress your images, you will need to decompress them first:
+
+```bash
+# -Z ; xz
+cp /path/to/backup.xz.0 backup.xz
+unxz backup.xz
+
+# -z ; gzip
+cp /path/to/backup.gz.0 backup.gz
+gunzip backup.gz
+```
+
+Now you have a suitable image for flashing an SD card. Plug the SD card you want to overwrite and copy the image:
+
+```bash
+sudo dd if=backup.img of=/dev/mmcblk0 bs=4M conv=noerror,sync status=progress
+```
+
+Insert the SD card in your PI and you recovered all your data!
 
 ## Automation
 

@@ -5,6 +5,7 @@
   - Fix #4 (merge rotate into main script)
   - Add a cheap-ass logo from "free" stuff
   - Update doc accordingly to new features
+  - Add restore part in README
 - 0.4.1 - Fix remote logic
   - Variables were not correctly set:used. Still subject to modification, but so far the correct logic is now implemented.
 - 0.4 - Compression bugfix
