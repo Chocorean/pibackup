@@ -5,7 +5,7 @@ set -eo pipefail
 script_name="$(basename "$0")"
 script_path="$(readlink -f "${BASH_SOURCE[0]}")"
 script_dir="$(cd "$(dirname "$script_path")" &> /dev/null && pwd)"
-script_version=$(cd $script_dir ; git describe --tags --abbrev=0 || cat VERSION)
+script_version=$(cd $script_dir ; git describe --tags --abbrev=0 || echo '0.5')
 
 #######################
 # print related stuff #
@@ -41,7 +41,7 @@ Optional parameters:
                                   Default: self (\$ uname -n)
   -r, --rotation-count [COUNT]  Quantity of files to be kept. Default: 8
   -t, --tmp-dir [DIRECTORY]     Temporary directory to use on the remote node. Default: /tmp
-  -T, --target [HOSTNAME]       Name of the host to backup. Default: self
+  -T, --target [HOSTNAME]       Name of the host to backup. Default: self ($ uname -n)
   -q, --quiet                   Silent mode.
   -z, --gzip                    Compress image using gzip.
   -Z, --xz                      Compress image using xz.
@@ -68,6 +68,23 @@ function check() {
   fi
 }
 
+# Rotate files
+function rotate() {
+  src="$1"
+  dst="$2"
+  count="$3"
+
+  filename="$(basename "$src")"
+  for i in $(seq 0 $((count-2)) | tac)
+  do
+    target="$dst/$filename.$i"
+    test -e "$target" && mv "$target" "$dst/$filename.$((i+1))"
+    # empty command to avoid exit if test fails
+    :;
+  done
+  mv "$src" "$dst/$filename.0"
+}
+
 #########
 # BEGIN #
 #########
@@ -80,11 +97,11 @@ node_name=$(uname -n)
 
 # Preparing optional parameters with default values
 compress=false
+target=$node_name
 image_name=$target.img
 ps_opt=''
 rotation_count=8
 tmp_dir=/tmp  # /mnt/hdd/tmp
-target=$node_name
 quiet=false
 z_ext=''
 
@@ -161,12 +178,11 @@ image_path=$tmp_dir/$image_name
 
 # Making sure requirements are satisfied
 check pishrink.sh
-check rotate.sh
 
 # Defining commands
 chown_cmd='sudo chown pi:pi'
 shrink_cmd='sudo pishrink.sh -a'
-rotate_cmd="rotate.sh"
+rotate_cmd="rotate"
 
 # dd command is made of two parts
 if [[ "$node_name" == "$target" ]]; then  # local

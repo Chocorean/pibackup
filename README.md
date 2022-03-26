@@ -17,9 +17,8 @@ This is still WIP work, let me know if you have ideas about how to improve.
 1. [Background](#background)
 2. [Usage](#usage)
 3. [Prerequisites](#prerequisites)
+   1. [Optional dependencies](#optional-dependencies)
 4. [Installation](#installation)
-   1. [Local usage](#local-usage)
-   2. [Remote usage](#remote-usage)
 5. [Example](#example)
 6. [Automation](#automation)
    1. [systemd timer](#systemd-timer)
@@ -38,7 +37,7 @@ Hope it will be useful for more people than just myself!
 ```bash
 $ ./pibackup.sh -h
 ---
-pibackup.sh 0.4.1
+pibackup.sh 0.5
 ---
 
 usage: pibackup.sh -o <output> [options]
@@ -47,13 +46,12 @@ Required parameters:
   -o, --output-dir [DIRECTORY]  Where backup will be saved and rotated.
 
 Optional parameters:
-  -d, --destination [HOSTNAME]  Name of the destination host. Default:
-                                  self ($ uname -n)
   -h, --help                    Display this message.
-  -n, --image-name [NAME]       Rename the backup file as '<NAME>.img.x'.
+  -n, --image-name [NAME]       Rename the backup file as '<TARGET>.img.x'.
                                   Default: self ($ uname -n)
   -r, --rotation-count [COUNT]  Quantity of files to be kept. Default: 8
   -t, --tmp-dir [DIRECTORY]     Temporary directory to use on the remote node. Default: /tmp
+  -T, --target [HOSTNAME]       Name of the host to backup. Default: self ($ uname -n)
   -q, --quiet                   Silent mode.
   -z, --gzip                    Compress image using gzip.
   -Z, --xz                      Compress image using xz.
@@ -61,9 +59,9 @@ Optional parameters:
 
 ## Prerequisites
 
-1. External disk space: At the moment, you cannot dump your sd card on itself; you need a proper storage. For instance, I have a disk drive plugged to my master Raspberry PI that other nodes will remotely interact with.
+1. External disk space: At the moment, you cannot dump your sd card on itself; you need a proper storage. For instance, I have a disk drive plugged to my main Raspberry PI that other nodes will remotely interact with.
 
-2. Good local network: If doing remote backup, you need to make sure your network is efficiently configured. I had speed issues at home, so I had to make another local network, which greatly increased the backup upload speed.
+2. Good local network: If doing remote backup, you need to make sure your network is efficiently configured. I had speed issues at home, so I had to create a local network for my PIs, which greatly increased the backup upload speed.
 
 3. This project uses [PiShrink](https://github.com/Drewsif/PiShrink) from Drewsif. Make sure to install it before.
 
@@ -72,13 +70,9 @@ $ which pishrink.sh
 /usr/local/bin/pishrink.sh
 ```
 
-4. It also depends on `sshfs`:
+### Optional dependencies
 
-```bash
-sudo apt install sshfs
-```
-
-5. If using `cron` you may need `postfix` to deliver local mails:
+1. If using `cron` you may need `postfix` to deliver local mails:
 
 ```bash
 sudo apt install postfix
@@ -86,22 +80,10 @@ sudo apt install postfix
 
 ## Installation
 
-This section is subject to change as I am not happy with how it currently works.
-
-### Local usage
-
-If you want to store the image on the same PI, you will need to install both `pibackup.sh` and `rotate.sh`
+All you need to do is download `pibackup.sh`, make it executable and put it in your PATH.
 
 ```bash
-for script in pibackup.sh rotate.sh; do wget https://raw.githubusercontent.com/Chocorean/pibackup/master/$script; chmod +x $script; sudo mv $script /usr/local/bin; done
-```
-
-### Remote usage
-
-If you want to store the image on a remote node, make sure to follow the previous step on the remote node. Then, you just need to install `pibackup.sh`:
-
-```bash
-wget https://raw.githubusercontent.com/Chocorean/pibackup/master/pibackup.sh
+wget https://raw.githubusercontent.com/Chocorean/pibackup/main/pibackup.sh
 chmod +x pibackup.sh
 sudo mv pibackup.sh /usr/local/bin
 ```
@@ -121,18 +103,16 @@ $ pibackup.sh -o /backups
 [pibackup.sh] Done ...
 ```
 
-If the backup is stored remotely, you need at least to specify the destination:
+For a remote node, just specify its hostname or IP address (if so, don't forget to rename the image using `-n` !). If you want to automate it, make sure to set a proper SSH config to allow the main node to connect to all the others.
 
 ```bash
-$ pibackup.sh -o /backups
-[pibackup.sh] Mounting remote disk ...
+$ pibackup.sh -o /backups -d another_pi
 [pibackup.sh] Dumping sdcard ...
 [ ... dd output ... ]
 [pibackup.sh] Setting permissions ...
 [pibackup.sh] Shrinking image ...
 [ ... pishrink.sh output ... ]
 [pibackup.sh] Rotating previous images ...
-[pibackup.sh] Unmounting remote disk ...
 [pibackup.sh] Done ...
 ```
 
