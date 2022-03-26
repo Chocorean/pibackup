@@ -60,9 +60,9 @@ Optional parameters:
 
 ## Prerequisites
 
-1. External disk space: At the moment, you cannot dump your sd card on itself; you need a proper storage. For instance, I have a disk drive plugged to my main Raspberry PI that other nodes will remotely interact with.
+1. **External disk space:** At the moment, you cannot dump your sd card on itself; you need a proper storage. For instance, I have a disk drive plugged to my main Raspberry PI that other nodes will remotely interact with.
 
-2. Good local network: If doing remote backup, you need to make sure your network is efficiently configured. I had speed issues at home, so I had to create a local network for my PIs, which greatly increased the backup upload speed.
+2. **Fast local network:** If doing remote backup, you need to make sure your network is efficiently configured. I had speed issues at home, so I had to create a local network for my PIs, which greatly increased the backup upload speed.
 
 3. This project uses [PiShrink](https://github.com/Drewsif/PiShrink) from Drewsif. Make sure to install it before.
 
@@ -94,7 +94,7 @@ sudo mv pibackup.sh /usr/local/bin
 For a local backup, this is simplest you can use:
 
 ```bash
-$ pibackup.sh -o /backups
+user@pi $ pibackup.sh -o /backups -n awesome_pi
 [pibackup.sh] Dumping sdcard ...
 [ ... dd output ... ]
 [pibackup.sh] Setting permissions ...
@@ -102,12 +102,14 @@ $ pibackup.sh -o /backups
 [ ... pishrink.sh output ... ]
 [pibackup.sh] Rotating previous images ...
 [pibackup.sh] Done ...
+user@pi $ ls /backups/pi
+awesome_pi.img.0
 ```
 
-For a remote node, just specify its hostname or IP address (if so, don't forget to rename the image using `-n` !). If you want to automate it, make sure to set a proper SSH config to allow the main node to connect to all the others.
+For a remote node, just specify its hostname or IP address.
 
 ```bash
-$ pibackup.sh -o /backups -d another_pi
+user@pi$ pibackup.sh -o /backups -d another_pi
 [pibackup.sh] Dumping sdcard ...
 [ ... dd output ... ]
 [pibackup.sh] Setting permissions ...
@@ -115,6 +117,8 @@ $ pibackup.sh -o /backups -d another_pi
 [ ... pishrink.sh output ... ]
 [pibackup.sh] Rotating previous images ...
 [pibackup.sh] Done ...
+user@pi $ ls /backups/another_pi
+another_pi.img.0
 ```
 
 ## Restoring
@@ -143,7 +147,7 @@ Insert the SD card in your PI and you recovered all your data!
 
 ## Automation
 
-The recommended way to use `pibackup.sh` is to create a `systemd` timer-service duo, but a `cron` job will work fine.
+The recommended way to use `pibackup.sh` is to create a `systemd` timer-service duo, but a `cron` job will work fine. You also need to make sure your nodes have a proper SSH config which allows the main node to connect to them without asking for password (see `~/.ssh/authorized_keys` file).
 
 ### systemd timer
 
@@ -157,7 +161,7 @@ You will first need to create the timer and the associated service. Then, enable
 Check [the docs](https://man.archlinux.org/man/systemd.time.7#CALENDAR_EVENTS) for `OnCalendar=` syntax.
 
 <details>
-  <summary>systemd timer</summary>
+  <summary>systemd timer example</summary>
   <p>
     /etc/systemd/system/pibackup.timer
     
@@ -174,7 +178,7 @@ Check [the docs](https://man.archlinux.org/man/systemd.time.7#CALENDAR_EVENTS) f
 </details>
     
 <details>
-  <summary>systemd service</summary>
+  <summary>systemd service example</summary>
   <p>
     /etc/systemd/system/pibackup.service
     
