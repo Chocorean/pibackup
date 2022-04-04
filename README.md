@@ -2,6 +2,7 @@
   <img src="./logo.png" alt="pibackup logo" width="192px" />
   <br><br>
   <p>
+    <img src="https://www.codefactor.io/repository/github/chocorean/pibackup/badge/main" alt="codefactor" />
     <img src="https://img.shields.io/badge/bash-5.0.3-lightgray" alt="bash version" />
   </p>
 </div>
