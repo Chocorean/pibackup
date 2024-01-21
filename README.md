@@ -39,7 +39,7 @@ Hope it will be useful for more people than just myself!
 ```bash
 $ ./pibackup.sh -h
 ---
-pibackup.sh 0.5
+pibackup.sh 0.5.1
 ---
 
 usage: pibackup.sh -o <output> [options]
@@ -49,11 +49,13 @@ Required parameters:
 
 Optional parameters:
   -h, --help                    Display this message.
-  -n, --image-name [NAME]       Rename the backup file as '<TARGET>.img.x'.
+  -g, --group [GROUP]           Host's group. Default: pi
+  -n, --image-name [NAME]       Rename the backup file as '<NAME>.img.x'.
                                   Default: self ($ uname -n)
   -r, --rotation-count [COUNT]  Quantity of files to be kept. Default: 8
   -t, --tmp-dir [DIRECTORY]     Temporary directory to use on the remote node. Default: /tmp
   -T, --target [HOSTNAME]       Name of the host to backup. Default: self ($ uname -n)
+  -u, --user [USER]             Host's user. Default: pi
   -q, --quiet                   Silent mode.
   -z, --gzip                    Compress image using gzip.
   -Z, --xz                      Compress image using xz.
