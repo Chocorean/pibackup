@@ -5,7 +5,7 @@ set -eo pipefail
 script_name="$(basename "$0")"
 script_path="$(readlink -f "${BASH_SOURCE[0]}")"
 script_dir="$(cd "$(dirname "$script_path")" &> /dev/null && pwd)"
-script_version=$(cd $script_dir ; git describe --tags --abbrev=0 || echo '0.5')
+script_version=$(cd $script_dir ; git describe --tags --abbrev=0 || echo '0.5.1')
 
 #######################
 # print related stuff #
@@ -37,11 +37,13 @@ Required parameters:
 
 Optional parameters:
   -h, --help                    Display this message.
+  -g, --group [GROUP]           Host's group. Default: pi
   -n, --image-name [NAME]       Rename the backup file as '<NAME>.img.x'.
                                   Default: self (\$ uname -n)
   -r, --rotation-count [COUNT]  Quantity of files to be kept. Default: 8
   -t, --tmp-dir [DIRECTORY]     Temporary directory to use on the remote node. Default: /tmp
   -T, --target [HOSTNAME]       Name of the host to backup. Default: self ($ uname -n)
+  -u, --user [USER]             Host's user. Default: pi
   -q, --quiet                   Silent mode.
   -z, --gzip                    Compress image using gzip.
   -Z, --xz                      Compress image using xz.
@@ -104,6 +106,8 @@ rotation_count=8
 tmp_dir=/tmp  # /mnt/hdd/tmp
 quiet=false
 z_ext=''
+user='pi'
+group='pi'
 
 # This one is requried and has to be defined later
 #output_dir=/mnt/hdd/backups/$node_name
@@ -154,6 +158,14 @@ while [ -n "$1" ]; do
       ps_opt='-Z'
       z_ext='xz'
       ;;
+    -u | --user)
+      shift
+      user="$1"
+      ;;
+    -g | --group)
+      shift
+      group="$1"
+      ;;
     # Default
     *)
       err "$(usage)"
@@ -180,9 +192,9 @@ image_path=$tmp_dir/$image_name
 check pishrink.sh
 
 # Defining commands
-chown_cmd='sudo chown pi:pi'
+chown_cmd="sudo chown ${user}:${group}"
 shrink_cmd='sudo pishrink.sh -a'
-rotate_cmd="rotate"
+rotate_cmd='rotate'
 
 # dd command is made of two parts
 if [[ "$node_name" == "$target" ]]; then  # local
